@@ -1,0 +1,11 @@
+# Proxy server
+server:
+username:
+password:
+port:
+
+# RSS feed
+target_url:
+
+# Incoming WebHooks
+webhook_url:
