@@ -15,7 +15,7 @@ def main():
     target_url = config['target_url']
     webhook_url = config['webhook_url']
     proxy = proxy_auth(config)
-    post_to_slack(target_url, proxy, webhook_url)
+    post_to_slack(target_url, proxy, webhook_url, yesterday())
 
 
 def load_config(path=None):
@@ -47,8 +47,7 @@ def feed_of_the_day(target_url, proxy, target_date):
     urllib.request.install_opener(opener)
     attachments = []
     for entry in feed['entries']:
-        print(entry['title'][-10:])
-        if entry['title'][-10:] == yesterday():
+        if entry['title'][-10:] == target_date:
             attachments += [{
                 'title': entry['title'],
                 'title_link': entry['link'],
@@ -58,7 +57,7 @@ def feed_of_the_day(target_url, proxy, target_date):
 
 def text_of_article(url):
     html = urllib.request.urlopen(url)
-    soup = BeautifulSoup(html)
+    soup = BeautifulSoup(html, 'html.parser')
     soup.head.decompose()
     soup.b.decompose()
     text = ''
@@ -68,12 +67,12 @@ def text_of_article(url):
     return text
 
 
-def post_to_slack(target_url, proxy, webhook_url, tz='JST'):
-    attachments = feed_of_the_day(target_url, proxy, yesterday(tz))
+def post_to_slack(target_url, proxy, webhook_url, target_date):
+    attachments = feed_of_the_day(target_url, proxy, target_date)
     requests.post(
         webhook_url,
         data=json.dumps({
-            'text': f'【{yesterday(tz)}に掲示された記事一覧】',
+            'text': f'【{target_date}に掲示された記事一覧】',
             'attachments': attachments,
             'link_names': 1}))
 
