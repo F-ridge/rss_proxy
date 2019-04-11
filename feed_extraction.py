@@ -29,16 +29,25 @@ def load_config(path=None):
 def proxy_auth(config):
     username = config['username']
     password = config['password']
-    port = config['port']
     server = config['server']
+    port = config['port']
     proxies = {"http": f"http://{username}:{password}@{server}:{port}"}
     proxy = urllib.request.ProxyHandler(proxies)
     return proxy
 
 
-def yesterday(tz='JST'):
-    tzone = timezone(timedelta(hours=+9), tz)
-    return (datetime.now(tz=tzone) + timedelta(days=-1)).strftime("%Y-%m-%d")
+def post_to_slack(target_url, proxy, webhook_url, target_date):
+    attachments = feed_of_the_day(target_url, proxy, target_date)
+    if attachments == []:
+        text = f'【{target_date}に掲示された記事はありません】'
+    else:
+        text = f'【{target_date}に掲示された記事一覧】'
+    requests.post(
+        webhook_url,
+        data=json.dumps({
+            'text': text,
+            'attachments': attachments,
+            'link_names': 1}))
 
 
 def feed_of_the_day(target_url, proxy, target_date):
@@ -67,14 +76,9 @@ def text_of_article(url):
     return text
 
 
-def post_to_slack(target_url, proxy, webhook_url, target_date):
-    attachments = feed_of_the_day(target_url, proxy, target_date)
-    requests.post(
-        webhook_url,
-        data=json.dumps({
-            'text': f'【{target_date}に掲示された記事一覧】',
-            'attachments': attachments,
-            'link_names': 1}))
+def yesterday(tz='JST'):
+    tzone = timezone(timedelta(hours=+9), tz)
+    return (datetime.now(tz=tzone) + timedelta(days=-1)).strftime("%Y-%m-%d")
 
 
 if __name__ == '__main__':
